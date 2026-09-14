@@ -7,6 +7,8 @@ React hooks for scanning barcodes from two common inputs:
 
 Both report scans through the same `onScan(code: string)` callback, so the rest of your app (looking up a product, adding a cart line, whatever) doesn't need to know which input produced the code.
 
+**Demo:** [use-barcode-scanner-demo.vercel.app](https://use-barcode-scanner-demo.vercel.app/) — try both hooks live.
+
 Camera scanning is built on a small, framework-agnostic dedupe engine (`createScanSession` / `registerDetection` / `registerMiss`) that solves the actual hard problem: telling a genuine repeat scan (the same product scanned three times in a row) apart from decoder noise (a barcode misread for one frame, or briefly unreadable due to autofocus/motion blur) — without a fixed cooldown that would either block real repeats or let noise through. It's exported directly if you want to drive a decoder of your own.
 
 ## Install

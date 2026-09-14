@@ -1,0 +1,64 @@
+{
+	"name": "use-barcode-scanner",
+	"version": "0.1.0",
+	"description": "React hooks for barcode scanning: a HID keyboard-wedge scanner and a camera decoder (Quagga2), sharing a dedupe engine that filters decoder noise without losing genuine repeat scans.",
+	"license": "MIT",
+	"type": "module",
+	"main": "./dist/index.cjs",
+	"module": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.js",
+			"require": "./dist/index.cjs"
+		}
+	},
+	"files": [
+		"dist"
+	],
+	"sideEffects": false,
+	"scripts": {
+		"build": "tsup",
+		"dev": "tsup --watch",
+		"typecheck": "tsc --noEmit",
+		"check": "biome check .",
+		"check:fix": "biome check --write .",
+		"test": "vitest run",
+		"test:watch": "vitest",
+		"prepublishOnly": "npm run typecheck && npm run test && npm run build"
+	},
+	"keywords": [
+		"barcode",
+		"barcode-scanner",
+		"ean-13",
+		"quagga",
+		"quagga2",
+		"keyboard-wedge",
+		"hid",
+		"react",
+		"react-hook",
+		"pos"
+	],
+	"peerDependencies": {
+		"@ericblade/quagga2": ">=1.8.0",
+		"react": ">=18"
+	},
+	"peerDependenciesMeta": {
+		"@ericblade/quagga2": {
+			"optional": true
+		}
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.3.4",
+		"@ericblade/quagga2": "^1.12.1",
+		"@testing-library/react": "^16.1.0",
+		"@types/react": "^19.0.2",
+		"jsdom": "^25.0.1",
+		"react": "^19.0.0",
+		"react-dom": "^19.0.0",
+		"tsup": "^8.3.5",
+		"typescript": "^5.7.2",
+		"vitest": "^3.0.0"
+	}
+}

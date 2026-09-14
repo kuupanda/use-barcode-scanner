@@ -3,6 +3,14 @@
 	"version": "0.1.3",
 	"description": "React hooks for barcode scanning: a HID keyboard-wedge scanner and a camera decoder (Quagga2), sharing a dedupe engine that filters decoder noise without losing genuine repeat scans.",
 	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/kuupanda/use-barcode-scanner.git"
+	},
+	"homepage": "https://github.com/kuupanda/use-barcode-scanner#readme",
+	"bugs": {
+		"url": "https://github.com/kuupanda/use-barcode-scanner/issues"
+	},
 	"type": "module",
 	"main": "./dist/index.cjs",
 	"module": "./dist/index.js",

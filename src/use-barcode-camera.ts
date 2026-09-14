@@ -1,6 +1,10 @@
 "use client";
 
-import Quagga, { type QuaggaJSResultObject } from "@ericblade/quagga2";
+import Quagga, {
+	type QuaggaJSCodeReader,
+	type QuaggaJSReaderConfig,
+	type QuaggaJSResultObject,
+} from "@ericblade/quagga2";
 import { type RefObject, useEffect, useRef, useState } from "react";
 import {
 	createScanSession,
@@ -36,11 +40,22 @@ export type BarcodeCameraStatus =
 	| "no-camera"
 	| "error";
 
+// Only EAN-13 by default — the format this hook has actually been tuned and
+// tested against. Pass `readers` to add or replace formats Quagga supports
+// (code_128_reader, upc_reader, ...); this is forwarded to Quagga as-is, so
+// any reader it accepts works here too.
+export const DEFAULT_READERS: (QuaggaJSReaderConfig | QuaggaJSCodeReader)[] = [
+	"ean_reader",
+];
+
 export type UseBarcodeCameraOptions = {
 	enabled: boolean;
 	onScan: (code: string) => void;
 	// Merged over DEFAULT_SCAN_AREA — pass only the sides you want to change.
 	scanArea?: Partial<ScanArea>;
+	// Replaces DEFAULT_READERS entirely (not merged) — include "ean_reader"
+	// yourself if you still want it alongside another format.
+	readers?: (QuaggaJSReaderConfig | QuaggaJSCodeReader)[];
 } & Partial<ScanSessionConfig>;
 
 export type UseBarcodeCameraResult = {
@@ -76,6 +91,7 @@ export function useBarcodeCamera({
 	enabled,
 	onScan,
 	scanArea,
+	readers = DEFAULT_READERS,
 	dedupeWindowMs,
 	missingGraceMs,
 	codeChangeConfirmMs,
@@ -87,7 +103,15 @@ export function useBarcodeCamera({
 
 	const effectiveArea: ScanArea = { ...DEFAULT_SCAN_AREA, ...scanArea };
 	const { left, right, top, bottom } = effectiveArea;
+	// Only the content matters for deciding whether to restart the camera —
+	// a caller passing a new-but-equal array literal each render (very
+	// common) must not retrigger Quagga.init.
+	// readersKey stands in for readers below: compares array content, not
+	// identity, so a new-but-equal array literal passed in on every render
+	// doesn't restart the camera.
+	const readersKey = JSON.stringify(readers);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: readersKey replaces readers in the deps list below (see comment above)
 	useEffect(() => {
 		if (!enabled || !containerRef.current) {
 			setStatus("idle");
@@ -132,7 +156,7 @@ export function useBarcodeCamera({
 					// draw a visible frame separately as a plain CSS overlay instead.
 					area: { left, right, top, bottom },
 				},
-				decoder: { readers: ["ean_reader"] },
+				decoder: { readers },
 			},
 			(err) => {
 				if (cancelled) {
@@ -168,6 +192,7 @@ export function useBarcodeCamera({
 		right,
 		top,
 		bottom,
+		readersKey,
 		dedupeWindowMs,
 		missingGraceMs,
 		codeChangeConfirmMs,

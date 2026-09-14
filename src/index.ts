@@ -8,6 +8,7 @@ export {
 } from "./scan-session";
 export {
 	type BarcodeCameraStatus,
+	DEFAULT_READERS,
 	DEFAULT_SCAN_AREA,
 	type ScanArea,
 	type UseBarcodeCameraOptions,

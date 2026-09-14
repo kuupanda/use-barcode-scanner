@@ -70,6 +70,10 @@ function Viewfinder() {
 
 Decoding is restricted to a centered band (`DEFAULT_SCAN_AREA`, also exported) covering 80% of the width and 25% of the height — a band, not a square, because an EAN-13 needs its full width in frame to decode. Draw your own visible frame over `containerRef` at those same coordinates if you want to show it to the user (color, border, whatever — this package draws no UI); Quagga's own border-draw isn't used here since it requires `locate: false`, which trades away the locating step this hook relies on for robust decoding.
 
+By default only EAN-13 is read (`DEFAULT_READERS`) — the format this hook has actually been tuned and tested against, on real devices, across many rounds of fixes (see `scan-session.ts`'s dedupe tuning). Pass `readers` to read others; it's forwarded to Quagga as-is (any format string or reader config Quagga itself accepts works here), and it *replaces* the default rather than adding to it — include `"ean_reader"` yourself if you want it alongside another format.
+
+**Other formats are supported, not validated.** Nothing in this hook or in the dedupe engine assumes EAN-13 specifically — `registerDetection`/`registerMiss` treat the code as an opaque string, and the scan-area geometry applies to any 1D barcode. But the noise patterns a decoder produces (misread frequency, how long a code stays readable while held steady) can differ by format, and the defaults above were tuned watching EAN-13 on real hardware. If you enable another reader, treat `dedupeWindowMs` / `missingGraceMs` / `codeChangeConfirmMs` as a starting point to re-validate against your own real-device testing, not a guarantee.
+
 Every knob that affects behavior is configurable:
 
 ```tsx
@@ -79,6 +83,9 @@ useBarcodeCamera({
 
 	// Merged over DEFAULT_SCAN_AREA — pass only the sides you want to change.
 	scanArea: { top: "30%", bottom: "30%" }, // a taller band, e.g. for Code 128
+
+	// Replaces DEFAULT_READERS (["ean_reader"]) entirely.
+	readers: ["ean_reader", "code_128_reader"],
 
 	// scan-session tuning (see below) — all optional, shown here with their defaults.
 	dedupeWindowMs: 8000,

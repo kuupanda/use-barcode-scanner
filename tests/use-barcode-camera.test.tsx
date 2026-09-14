@@ -162,6 +162,31 @@ describe("useBarcodeCamera", () => {
 		expect(resultRef.current?.scanArea).toEqual(expectedArea);
 	});
 
+	it("should default to reading only EAN-13", () => {
+		const resultRef = { current: null } as { current: HookResult | null };
+		render(
+			<TestHarness enabled={true} onScan={vi.fn()} resultRef={resultRef} />,
+		);
+
+		const config = mockQuagga.init.mock.calls[0][0];
+		expect(config.decoder.readers).toEqual(["ean_reader"]);
+	});
+
+	it("should accept a custom list of readers instead of the EAN-13 default", () => {
+		const resultRef = { current: null } as { current: HookResult | null };
+		render(
+			<TestHarness
+				enabled={true}
+				onScan={vi.fn()}
+				resultRef={resultRef}
+				readers={["ean_reader", "code_128_reader"]}
+			/>,
+		);
+
+		const config = mockQuagga.init.mock.calls[0][0];
+		expect(config.decoder.readers).toEqual(["ean_reader", "code_128_reader"]);
+	});
+
 	it("should pass custom dedupe tuning through to the scan session", () => {
 		// A shorter missingGraceMs than the 700ms default should let a scan
 		// count again sooner after a sustained absence.

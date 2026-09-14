@@ -3,7 +3,7 @@ import { act, render } from "@testing-library/react";
 import { StrictMode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
-	type BarcodeCameraStatus,
+	type UseBarcodeCameraOptions,
 	useBarcodeCamera,
 } from "../src/use-barcode-camera";
 
@@ -42,21 +42,19 @@ function makeQuaggaResult(code: string | null): QuaggaJSResultObject {
 	};
 }
 
-type HookResult = {
-	containerRef: React.RefObject<HTMLDivElement | null>;
-	status: BarcodeCameraStatus;
-};
+type HookResult = ReturnType<typeof useBarcodeCamera>;
 
 function TestHarness({
 	enabled,
 	onScan,
 	resultRef,
-}: {
+	...options
+}: Omit<UseBarcodeCameraOptions, "enabled" | "onScan"> & {
 	enabled: boolean;
 	onScan: (code: string) => void;
 	resultRef: { current: HookResult | null };
 }) {
-	const result = useBarcodeCamera({ enabled, onScan });
+	const result = useBarcodeCamera({ enabled, onScan, ...options });
 	resultRef.current = result;
 	return <div ref={result.containerRef} />;
 }
@@ -140,6 +138,51 @@ describe("useBarcodeCamera", () => {
 			top: "37.5%",
 			bottom: "37.5%",
 		});
+	});
+
+	it("should accept a custom scanArea, merged over the defaults, and return the effective area used", () => {
+		const resultRef = { current: null } as { current: HookResult | null };
+		render(
+			<TestHarness
+				enabled={true}
+				onScan={vi.fn()}
+				resultRef={resultRef}
+				scanArea={{ top: "45%", bottom: "45%" }}
+			/>,
+		);
+
+		const config = mockQuagga.init.mock.calls[0][0];
+		const expectedArea = {
+			left: "10%",
+			right: "10%",
+			top: "45%",
+			bottom: "45%",
+		};
+		expect(config.inputStream.area).toEqual(expectedArea);
+		expect(resultRef.current?.scanArea).toEqual(expectedArea);
+	});
+
+	it("should pass custom dedupe tuning through to the scan session", () => {
+		// A shorter missingGraceMs than the 700ms default should let a scan
+		// count again sooner after a sustained absence.
+		const onScan = vi.fn();
+		const resultRef = { current: null } as { current: HookResult | null };
+		render(
+			<TestHarness
+				enabled={true}
+				onScan={onScan}
+				resultRef={resultRef}
+				missingGraceMs={100}
+			/>,
+		);
+		succeedInit();
+
+		fireDetected("3760123456784", 0);
+		fireProcessed(null, 10);
+		fireProcessed(null, 120); // 110ms since the miss streak began — past the custom 100ms grace
+		fireDetected("3760123456784", 130);
+
+		expect(onScan).toHaveBeenCalledTimes(2);
 	});
 
 	it("should report running after a successful init", () => {

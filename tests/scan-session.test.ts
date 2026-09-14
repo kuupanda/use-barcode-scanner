@@ -121,4 +121,76 @@ describe("scan session", () => {
 		const result = registerDetection(session, "12345", 300);
 		expect(result.accept).toBe(false);
 	});
+
+	describe("configurable tuning", () => {
+		it("should use a custom dedupeWindowMs instead of the 8s default", () => {
+			const first = registerDetection(
+				createScanSession({ dedupeWindowMs: 500 }),
+				"12345",
+				0,
+			);
+			const stillWithinCustomWindow = registerDetection(
+				first.session,
+				"12345",
+				400,
+			);
+			expect(stillWithinCustomWindow.accept).toBe(false);
+
+			const pastCustomWindow = registerDetection(
+				stillWithinCustomWindow.session,
+				"12345",
+				500,
+			);
+			expect(pastCustomWindow.accept).toBe(true);
+		});
+
+		it("should use a custom missingGraceMs instead of the 700ms default", () => {
+			let session = registerDetection(
+				createScanSession({ missingGraceMs: 200 }),
+				"12345",
+				0,
+			).session;
+			session = registerMiss(session, 10); // starts the miss streak
+			session = registerMiss(session, 220); // 210ms since the streak began, past the custom 200ms grace
+			const result = registerDetection(session, "12345", 230);
+			expect(result.accept).toBe(true);
+		});
+
+		it("should use a custom codeChangeConfirmMs instead of the 150ms default", () => {
+			const first = registerDetection(
+				createScanSession({ codeChangeConfirmMs: 30 }),
+				"12345",
+				0,
+			);
+			const pending = registerDetection(first.session, "67890", 10);
+			const result = registerDetection(pending.session, "67890", 40);
+			expect(result.accept).toBe(true);
+		});
+
+		it("should ignore an explicit undefined override and keep the default for that field", () => {
+			// A consumer that forwards optional props straight through (e.g.
+			// `createScanSession({ dedupeWindowMs, missingGraceMs })` where
+			// only one was actually passed by its own caller) must not have
+			// the untouched fields blown away by an explicit `undefined`.
+			const first = registerDetection(
+				createScanSession({ dedupeWindowMs: undefined, missingGraceMs: 200 }),
+				"12345",
+				0,
+			);
+			const stillWithinDefaultWindow = registerDetection(
+				first.session,
+				"12345",
+				1500,
+			);
+			expect(stillWithinDefaultWindow.accept).toBe(false);
+		});
+
+		it("should keep using the config a session was created with across every call", () => {
+			let session = createScanSession({ dedupeWindowMs: 100 });
+			session = registerDetection(session, "12345", 0).session;
+			session = registerMiss(session, 50);
+			const result = registerDetection(session, "12345", 100);
+			expect(result.accept).toBe(true);
+		});
+	});
 });

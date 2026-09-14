@@ -1,3 +1,35 @@
+export type ScanSessionConfig = {
+	// A safety-net ceiling, not the routine dedupe path — a barcode propped
+	// up and never removed from view must not re-add every couple of
+	// seconds. Real dedupe for a still-in-frame code comes from registerMiss
+	// (a sustained absence); this only guards against the miss side getting
+	// stuck (e.g. the stream freezing without ever reporting a missed
+	// frame).
+	dedupeWindowMs: number;
+	// A decoder's read is noisy even while a barcode is held perfectly
+	// still (autofocus hunting, motion blur), so a single missed frame does
+	// not mean the item left the camera's view — only a sustained absence
+	// does. Too short a grace here lets real-device noise (e.g. screen
+	// glare/moiré) clear the session mid-hold, producing repeated duplicate
+	// adds on an untouched barcode.
+	missingGraceMs: number;
+	// A misread (garbage digits that still pass EAN-13's checksum) is
+	// almost always a single-frame fluke that never repeats itself on the
+	// very next frame — unlike a genuine swap to a different product, which
+	// keeps reading the same new code as the cashier holds it in view.
+	// Without this, a single misread instantly stole `lastCode`, so the
+	// real barcode looked "new" again the moment it was read correctly
+	// right after — a double-scan while holding one item motionless in
+	// frame.
+	codeChangeConfirmMs: number;
+};
+
+const DEFAULT_CONFIG: ScanSessionConfig = {
+	dedupeWindowMs: 8000,
+	missingGraceMs: 700,
+	codeChangeConfirmMs: 150,
+};
+
 export type ScanSessionState = {
 	lastCode: string | null;
 	lastAcceptedAt: number;
@@ -6,6 +38,7 @@ export type ScanSessionState = {
 	// confirmation before it's trusted enough to replace lastCode.
 	pendingCode: string | null;
 	pendingSince: number | null;
+	config: ScanSessionConfig;
 };
 
 export type RegisterDetectionResult = {
@@ -13,47 +46,36 @@ export type RegisterDetectionResult = {
 	session: ScanSessionState;
 };
 
-// A safety-net ceiling, not the routine dedupe path — a barcode propped up
-// and never removed from view must not re-add every couple of seconds.
-// Real dedupe for a still-in-frame code comes from registerMiss (a sustained
-// absence); this only guards against the miss side getting stuck (e.g. the
-// stream freezing without ever reporting a missed frame).
-const DEDUPE_WINDOW_MS = 8000;
-
-// A decoder's read is noisy even while a barcode is held perfectly still
-// (autofocus hunting, motion blur), so a single missed frame does not mean
-// the item left the camera's view — only a sustained absence does. Too
-// short a grace here lets real-device noise (e.g. screen glare/moiré) clear
-// the session mid-hold, producing repeated duplicate adds on an untouched
-// barcode.
-const MISSING_GRACE_MS = 700;
-
-// A misread (garbage digits that still pass EAN-13's checksum) is almost
-// always a single-frame fluke that never repeats itself on the very next
-// frame — unlike a genuine swap to a different product, which keeps reading
-// the same new code as the cashier holds it in view. Without this, a single
-// misread instantly stole `lastCode`, so the real barcode looked "new" again
-// the moment it was read correctly right after — a double-scan while
-// holding one item motionless in frame.
-const CODE_CHANGE_CONFIRM_MS = 150;
-
-function freshAccept(code: string, now: number): ScanSessionState {
+function freshAccept(
+	code: string,
+	now: number,
+	config: ScanSessionConfig,
+): ScanSessionState {
 	return {
 		lastCode: code,
 		lastAcceptedAt: now,
 		missingSince: null,
 		pendingCode: null,
 		pendingSince: null,
+		config,
 	};
 }
 
-export function createScanSession(): ScanSessionState {
+export function createScanSession(
+	config: Partial<ScanSessionConfig> = {},
+): ScanSessionState {
 	return {
 		lastCode: null,
 		lastAcceptedAt: 0,
 		missingSince: null,
 		pendingCode: null,
 		pendingSince: null,
+		config: {
+			dedupeWindowMs: config.dedupeWindowMs ?? DEFAULT_CONFIG.dedupeWindowMs,
+			missingGraceMs: config.missingGraceMs ?? DEFAULT_CONFIG.missingGraceMs,
+			codeChangeConfirmMs:
+				config.codeChangeConfirmMs ?? DEFAULT_CONFIG.codeChangeConfirmMs,
+		},
 	};
 }
 
@@ -67,8 +89,10 @@ export function registerDetection(
 	code: string,
 	now: number,
 ): RegisterDetectionResult {
+	const { config } = session;
+
 	if (session.lastCode === code) {
-		if (now - session.lastAcceptedAt < DEDUPE_WINDOW_MS) {
+		if (now - session.lastAcceptedAt < config.dedupeWindowMs) {
 			return {
 				accept: false,
 				session: {
@@ -79,16 +103,16 @@ export function registerDetection(
 				},
 			};
 		}
-		return { accept: true, session: freshAccept(code, now) };
+		return { accept: true, session: freshAccept(code, now, config) };
 	}
 
 	if (session.lastCode === null) {
-		return { accept: true, session: freshAccept(code, now) };
+		return { accept: true, session: freshAccept(code, now, config) };
 	}
 
 	if (session.pendingCode === code) {
-		if (now - (session.pendingSince ?? now) >= CODE_CHANGE_CONFIRM_MS) {
-			return { accept: true, session: freshAccept(code, now) };
+		if (now - (session.pendingSince ?? now) >= config.codeChangeConfirmMs) {
+			return { accept: true, session: freshAccept(code, now, config) };
 		}
 		return { accept: false, session };
 	}
@@ -113,13 +137,14 @@ export function registerMiss(
 	}
 
 	const missingSince = session.missingSince ?? now;
-	if (now - missingSince >= MISSING_GRACE_MS) {
+	if (now - missingSince >= session.config.missingGraceMs) {
 		return {
 			lastCode: null,
 			lastAcceptedAt: session.lastAcceptedAt,
 			missingSince: null,
 			pendingCode: null,
 			pendingSince: null,
+			config: session.config,
 		};
 	}
 

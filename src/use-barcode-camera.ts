@@ -6,18 +6,27 @@ import {
 	createScanSession,
 	registerDetection,
 	registerMiss,
+	type ScanSessionConfig,
 	type ScanSessionState,
 } from "./scan-session";
 
+export type ScanArea = {
+	left: string;
+	right: string;
+	top: string;
+	bottom: string;
+};
+
 // A band, not a square: an EAN-13 needs its full width in frame to decode.
-// Export this so a viewfinder overlay can line up a visible frame exactly
-// with the region Quagga actually restricts decoding to.
-export const BARCODE_SCAN_AREA = {
+// Exported as the default so a viewfinder overlay can line up a visible
+// frame exactly with the region Quagga actually restricts decoding to, even
+// when a caller overrides only part of it via `scanArea`.
+export const DEFAULT_SCAN_AREA: ScanArea = {
 	left: "10%",
 	right: "10%",
 	top: "37.5%",
 	bottom: "37.5%",
-} as const;
+};
 
 export type BarcodeCameraStatus =
 	| "idle"
@@ -30,11 +39,17 @@ export type BarcodeCameraStatus =
 export type UseBarcodeCameraOptions = {
 	enabled: boolean;
 	onScan: (code: string) => void;
-};
+	// Merged over DEFAULT_SCAN_AREA — pass only the sides you want to change.
+	scanArea?: Partial<ScanArea>;
+} & Partial<ScanSessionConfig>;
 
 export type UseBarcodeCameraResult = {
 	containerRef: RefObject<HTMLDivElement | null>;
 	status: BarcodeCameraStatus;
+	// The area actually in effect (defaults merged with any override) — read
+	// this back to draw a visible frame that always matches the real decode
+	// region instead of hardcoding it a second time.
+	scanArea: ScanArea;
 };
 
 // getUserMedia reports permission/device failures as a DOMException; Quagga's
@@ -60,11 +75,18 @@ function classifyError(err: unknown): BarcodeCameraStatus {
 export function useBarcodeCamera({
 	enabled,
 	onScan,
+	scanArea,
+	dedupeWindowMs,
+	missingGraceMs,
+	codeChangeConfirmMs,
 }: UseBarcodeCameraOptions): UseBarcodeCameraResult {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const [status, setStatus] = useState<BarcodeCameraStatus>("idle");
 	const onScanRef = useRef(onScan);
 	onScanRef.current = onScan;
+
+	const effectiveArea: ScanArea = { ...DEFAULT_SCAN_AREA, ...scanArea };
+	const { left, right, top, bottom } = effectiveArea;
 
 	useEffect(() => {
 		if (!enabled || !containerRef.current) {
@@ -72,7 +94,11 @@ export function useBarcodeCamera({
 			return;
 		}
 
-		let session: ScanSessionState = createScanSession();
+		let session: ScanSessionState = createScanSession({
+			dedupeWindowMs,
+			missingGraceMs,
+			codeChangeConfirmMs,
+		});
 		let cancelled = false;
 		setStatus("starting");
 
@@ -104,7 +130,7 @@ export function useBarcodeCamera({
 					// as a border itself, but only when `locate: false`, which trades
 					// away the locating step this hook relies on for robust decoding;
 					// draw a visible frame separately as a plain CSS overlay instead.
-					area: BARCODE_SCAN_AREA,
+					area: { left, right, top, bottom },
 				},
 				decoder: { readers: ["ean_reader"] },
 			},
@@ -136,7 +162,16 @@ export function useBarcodeCamera({
 			Quagga.offProcessed(handleProcessed);
 			Quagga.stop();
 		};
-	}, [enabled]);
+	}, [
+		enabled,
+		left,
+		right,
+		top,
+		bottom,
+		dedupeWindowMs,
+		missingGraceMs,
+		codeChangeConfirmMs,
+	]);
 
-	return { containerRef, status };
+	return { containerRef, status, scanArea: effectiveArea };
 }

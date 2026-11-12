@@ -30,6 +30,15 @@ const DIGIT_CODES: Record<string, string> = {
 	Numpad9: "9",
 };
 
+const MODIFIER_KEYS = new Set([
+	"Shift",
+	"Control",
+	"Alt",
+	"AltGraph",
+	"Meta",
+	"CapsLock",
+]);
+
 export type UseBarcodeScannerOptions = {
 	enabled: boolean;
 	onScan: (code: string) => void;
@@ -58,6 +67,11 @@ export function useBarcodeScanner({
 		}
 
 		function handleKeyDown(e: KeyboardEvent) {
+			// Scanners in a non-US layout press and release Shift between digits.
+			if (MODIFIER_KEYS.has(e.key)) {
+				return;
+			}
+
 			const now = Date.now();
 			const elapsed = now - lastKeyTimeRef.current;
 			lastKeyTimeRef.current = now;

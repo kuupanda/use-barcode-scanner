@@ -30,7 +30,14 @@ const DIGIT_CODES: Record<string, string> = {
 	Numpad9: "9",
 };
 
-const MODIFIER_KEYS = new Set(["Shift", "Control", "Alt", "AltGraph", "Meta", "CapsLock"]);
+const MODIFIER_KEYS = new Set([
+	"Shift",
+	"Control",
+	"Alt",
+	"AltGraph",
+	"Meta",
+	"CapsLock",
+]);
 
 export type UseBarcodeScannerOptions = {
 	enabled: boolean;

@@ -44,6 +44,9 @@ export type UseBarcodeScannerOptions = {
 	onScan: (code: string) => void;
 	maxIntervalMs?: number;
 	minLength?: number;
+	// Idle time after which a burst is delivered even without a trailing Enter,
+	// for scanners configured with no suffix.
+	idleFlushMs?: number;
 };
 
 // Captures a HID keyboard-wedge barcode scanner: a fast digit burst
@@ -55,6 +58,7 @@ export function useBarcodeScanner({
 	onScan,
 	maxIntervalMs = 100,
 	minLength = 5,
+	idleFlushMs = 50,
 }: UseBarcodeScannerOptions): void {
 	const bufferRef = useRef("");
 	const lastKeyTimeRef = useRef(0);
@@ -66,6 +70,24 @@ export function useBarcodeScanner({
 			return;
 		}
 
+		let idleTimer: ReturnType<typeof setTimeout> | undefined;
+
+		function cancelIdleFlush() {
+			clearTimeout(idleTimer);
+			idleTimer = undefined;
+		}
+
+		function scheduleIdleFlush() {
+			cancelIdleFlush();
+			idleTimer = setTimeout(() => {
+				const code = bufferRef.current;
+				bufferRef.current = "";
+				if (code.length >= minLength) {
+					onScan(code);
+				}
+			}, idleFlushMs);
+		}
+
 		function handleKeyDown(e: KeyboardEvent) {
 			// Scanners in a non-US layout press and release Shift between digits.
 			if (MODIFIER_KEYS.has(e.key)) {
@@ -75,6 +97,8 @@ export function useBarcodeScanner({
 			const now = Date.now();
 			const elapsed = now - lastKeyTimeRef.current;
 			lastKeyTimeRef.current = now;
+
+			cancelIdleFlush();
 
 			if (e.key === "Enter") {
 				const code = bufferRef.current;
@@ -94,9 +118,16 @@ export function useBarcodeScanner({
 
 			bufferRef.current =
 				elapsed <= maxIntervalMs ? bufferRef.current + digit : digit;
+
+			if (bufferRef.current.length >= minLength) {
+				scheduleIdleFlush();
+			}
 		}
 
 		window.addEventListener("keydown", handleKeyDown);
-		return () => window.removeEventListener("keydown", handleKeyDown);
-	}, [enabled, onScan, maxIntervalMs, minLength]);
+		return () => {
+			cancelIdleFlush();
+			window.removeEventListener("keydown", handleKeyDown);
+		};
+	}, [enabled, onScan, maxIntervalMs, minLength, idleFlushMs]);
 }

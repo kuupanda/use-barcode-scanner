@@ -47,9 +47,10 @@ Options:
 | Option | Default | Meaning |
 | --- | --- | --- |
 | `enabled` | — | Set to `false` to stop listening (e.g. while a dialog is open). |
-| `onScan` | — | Called with the scanned code once a fast-enough digit burst ends in Enter. |
+| `onScan` | — | Called with the scanned code once a fast-enough digit burst ends, in Enter or by going idle. |
 | `maxIntervalMs` | `100` | Max time between keystrokes to still count as the same scan. |
-| `minLength` | `5` | Minimum digit count for Enter to be treated as ending a scan. |
+| `minLength` | `5` | Minimum digit count for a burst to count as a scan. |
+| `idleFlushMs` | `50` | A burst of at least `minLength` digits is delivered this long after its last key if no Enter arrives (scanners configured without an Enter suffix). |
 
 ## `useBarcodeCamera` — camera scanner
 

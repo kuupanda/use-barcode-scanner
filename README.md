@@ -50,7 +50,32 @@ Options:
 | `onScan` | — | Called with the scanned code once a fast-enough digit burst ends, in Enter or by going idle. |
 | `maxIntervalMs` | `100` | Max time between keystrokes to still count as the same scan. |
 | `minLength` | `5` | Minimum digit count for a burst to count as a scan. |
-| `idleFlushMs` | `50` | A burst of at least `minLength` digits is delivered this long after its last key if no Enter arrives (scanners configured without an Enter suffix). |
+| `idleFlushMs` | `50` | A burst of at least `minLength` digits is delivered this long after its last key if no Enter arrives, never sooner than `maxIntervalMs` + 1 (a smaller value would cut slow scanners in two) (scanners configured without an Enter suffix). |
+
+### Observing scans (`onAttempt`)
+
+`onAttempt` is called for every burst of scanner-like keys (at least `minLength` keys, each within `maxIntervalMs` of the last), whether it became a scan or not. It carries the shape of the burst, never your app's data, so it is safe to forward to any logger or metrics tool:
+
+```tsx
+useBarcodeScanner({
+	enabled: !dialogOpen,
+	onScan: (code, attempt) => { /* attempt.trigger is "enter" or "idle" */ },
+	onAttempt: (attempt) => {
+		if (!attempt.delivered) log(attempt.reason, attempt.run);
+	},
+});
+```
+
+| `reason` | Meaning |
+| --- | --- |
+| `disabled` | `enabled` was `false`: the burst was seen but not delivered. Observing continues while disabled as long as `onAttempt` is set. |
+| `unreadable_keys` | The keys had no usable `event.code` (some Android keyboards send `Unidentified`). |
+| `tab_terminator` | The scanner ends with Tab, which is not a scan terminator. |
+| `non_digit_chars` | Letters or symbols left fewer than `minLength` trailing digits. |
+| `too_short` | Fewer than `minLength` digits. |
+| `unexplained` | None of the above; worth investigating. |
+
+`attempt.run` has the key kinds, the gap before each key, the duration, the terminator and the trailing digits. `createScanEngine` (the pure engine behind the hook, no React or DOM) is exported for non-React use.
 
 ## `useBarcodeCamera` — camera scanner
 
@@ -98,6 +123,14 @@ useBarcodeCamera({
 ```
 
 `scanArea` in the returned value is always the *effective* area (defaults merged with your override) — read it back instead of hardcoding your overlay's coordinates a second time, so they can never drift apart from what's actually being decoded.
+
+### Observing sessions (`onSession`)
+
+`onSession(summary)` is called once each time the camera is switched off (or the component unmounts). `summary` has `finalStatus`, `startupMs` (open to first `running`, `null` if it never ran), `firstScanMs`, `scans` (accepted scans only) and `durationMs`. `startupBucket` and `scansBucket` turn those numbers into low-cardinality labels for metrics. `createCameraSession` is exported for non-React use.
+
+### Keyboard scanner profile
+
+`buildFingerprint(attempt.run)` summarises how a scanner types (key style, Shift/CapsLock, terminator, gap percentiles, duration) with no key values. Group scans by it to find which hardware needs a different setup.
 
 ## Dedupe engine
 

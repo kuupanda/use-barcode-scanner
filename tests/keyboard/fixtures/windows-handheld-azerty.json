@@ -1,0 +1,210 @@
+{
+	"ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+	"platform": "Win32",
+	"content": "0221013001345",
+	"events": [
+		{
+			"key": "CapsLock",
+			"code": "CapsLock",
+			"mods": "-",
+			"delta": 0,
+			"repeat": false
+		},
+		{
+			"key": "Shift",
+			"code": "ShiftLeft",
+			"mods": "shift",
+			"delta": 16,
+			"repeat": false
+		},
+		{
+			"key": "0",
+			"code": "Digit0",
+			"mods": "shift",
+			"delta": 1,
+			"repeat": false
+		},
+		{
+			"key": "Shift",
+			"code": "ShiftLeft",
+			"mods": "shift",
+			"delta": 32,
+			"repeat": false
+		},
+		{
+			"key": "2",
+			"code": "Digit2",
+			"mods": "shift",
+			"delta": 0,
+			"repeat": false
+		},
+		{
+			"key": "Shift",
+			"code": "ShiftLeft",
+			"mods": "shift",
+			"delta": 31,
+			"repeat": false
+		},
+		{
+			"key": "2",
+			"code": "Digit2",
+			"mods": "shift",
+			"delta": 1,
+			"repeat": false
+		},
+		{
+			"key": "Shift",
+			"code": "ShiftLeft",
+			"mods": "shift",
+			"delta": 32,
+			"repeat": false
+		},
+		{
+			"key": "1",
+			"code": "Digit1",
+			"mods": "shift",
+			"delta": 1,
+			"repeat": false
+		},
+		{
+			"key": "Shift",
+			"code": "ShiftLeft",
+			"mods": "shift",
+			"delta": 15,
+			"repeat": false
+		},
+		{
+			"key": "0",
+			"code": "Digit0",
+			"mods": "shift",
+			"delta": 0,
+			"repeat": false
+		},
+		{
+			"key": "Shift",
+			"code": "ShiftLeft",
+			"mods": "shift",
+			"delta": 17,
+			"repeat": false
+		},
+		{
+			"key": "1",
+			"code": "Digit1",
+			"mods": "shift",
+			"delta": 0,
+			"repeat": false
+		},
+		{
+			"key": "Shift",
+			"code": "ShiftLeft",
+			"mods": "shift",
+			"delta": 16,
+			"repeat": false
+		},
+		{
+			"key": "3",
+			"code": "Digit3",
+			"mods": "shift",
+			"delta": 0,
+			"repeat": false
+		},
+		{
+			"key": "Shift",
+			"code": "ShiftLeft",
+			"mods": "shift",
+			"delta": 17,
+			"repeat": false
+		},
+		{
+			"key": "0",
+			"code": "Digit0",
+			"mods": "shift",
+			"delta": 0,
+			"repeat": false
+		},
+		{
+			"key": "Shift",
+			"code": "ShiftLeft",
+			"mods": "shift",
+			"delta": 16,
+			"repeat": false
+		},
+		{
+			"key": "0",
+			"code": "Digit0",
+			"mods": "shift",
+			"delta": 1,
+			"repeat": false
+		},
+		{
+			"key": "Shift",
+			"code": "ShiftLeft",
+			"mods": "shift",
+			"delta": 17,
+			"repeat": false
+		},
+		{
+			"key": "1",
+			"code": "Digit1",
+			"mods": "shift",
+			"delta": 0,
+			"repeat": false
+		},
+		{
+			"key": "Shift",
+			"code": "ShiftLeft",
+			"mods": "shift",
+			"delta": 14,
+			"repeat": false
+		},
+		{
+			"key": "3",
+			"code": "Digit3",
+			"mods": "shift",
+			"delta": 0,
+			"repeat": false
+		},
+		{
+			"key": "Shift",
+			"code": "ShiftLeft",
+			"mods": "shift",
+			"delta": 16,
+			"repeat": false
+		},
+		{
+			"key": "4",
+			"code": "Digit4",
+			"mods": "shift",
+			"delta": 0,
+			"repeat": false
+		},
+		{
+			"key": "Shift",
+			"code": "ShiftLeft",
+			"mods": "shift",
+			"delta": 17,
+			"repeat": false
+		},
+		{
+			"key": "5",
+			"code": "Digit5",
+			"mods": "shift",
+			"delta": 0,
+			"repeat": false
+		},
+		{
+			"key": "Enter",
+			"code": "Enter",
+			"mods": "-",
+			"delta": 19,
+			"repeat": false
+		},
+		{
+			"key": "CapsLock",
+			"code": "CapsLock",
+			"mods": "-",
+			"delta": 9,
+			"repeat": false
+		}
+	]
+}

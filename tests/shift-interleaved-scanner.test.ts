@@ -52,6 +52,9 @@ describe("useBarcodeScanner with Shift keydowns inside the burst", () => {
 		}
 
 		expect(onScan).toHaveBeenCalledTimes(1);
-		expect(onScan).toHaveBeenCalledWith("2304000025369");
+		expect(onScan).toHaveBeenCalledWith(
+			"2304000025369",
+			expect.objectContaining({ delivered: true }),
+		);
 	});
 });

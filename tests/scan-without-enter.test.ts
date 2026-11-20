@@ -69,7 +69,10 @@ describe("useBarcodeScanner with a scanner that sends no Enter", () => {
 		vi.advanceTimersByTime(200);
 
 		expect(onScan).toHaveBeenCalledTimes(1);
-		expect(onScan).toHaveBeenCalledWith("205000003420");
+		expect(onScan).toHaveBeenCalledWith(
+			"205000003420",
+			expect.objectContaining({ delivered: true }),
+		);
 	});
 
 	it("delivers a burst only once when Enter arrives before the idle timeout", () => {
@@ -82,7 +85,10 @@ describe("useBarcodeScanner with a scanner that sends no Enter", () => {
 		vi.advanceTimersByTime(500);
 
 		expect(onScan).toHaveBeenCalledTimes(1);
-		expect(onScan).toHaveBeenCalledWith("205000003420");
+		expect(onScan).toHaveBeenCalledWith(
+			"205000003420",
+			expect.objectContaining({ delivered: true }),
+		);
 	});
 
 	it("does not deliver a burst shorter than minLength", () => {

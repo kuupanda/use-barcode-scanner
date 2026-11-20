@@ -2,46 +2,22 @@
 
 import { useEffect, useRef } from "react";
 
-// event.key is translated by the OS keyboard layout (e.g. a French AZERTY
-// host turns the scanner's digit row into "&é\"'(§è!çà"); event.code names
-// the physical key and is layout-independent, so digits are read from there.
-// Both the top digit row and the numpad are covered — some scanners are
-// configured to emit numpad codes specifically to sidestep this on AZERTY.
-const DIGIT_CODES: Record<string, string> = {
-	Digit0: "0",
-	Digit1: "1",
-	Digit2: "2",
-	Digit3: "3",
-	Digit4: "4",
-	Digit5: "5",
-	Digit6: "6",
-	Digit7: "7",
-	Digit8: "8",
-	Digit9: "9",
-	Numpad0: "0",
-	Numpad1: "1",
-	Numpad2: "2",
-	Numpad3: "3",
-	Numpad4: "4",
-	Numpad5: "5",
-	Numpad6: "6",
-	Numpad7: "7",
-	Numpad8: "8",
-	Numpad9: "9",
-};
-
-const MODIFIER_KEYS = new Set([
-	"Shift",
-	"Control",
-	"Alt",
-	"AltGraph",
-	"Meta",
-	"CapsLock",
-]);
+import {
+	createScanEngine,
+	type DeliveredAttempt,
+	type ScanAttempt,
+} from "./keyboard/scan-engine";
 
 export type UseBarcodeScannerOptions = {
 	enabled: boolean;
-	onScan: (code: string) => void;
+	/** `attempt` describes the burst of keys the code came from. */
+	onScan: (code: string, attempt: DeliveredAttempt) => void;
+	/**
+	 * Called for every burst of scanner-like keys, delivered or not, with the
+	 * reason when it was not. While `enabled` is false it still fires (reason
+	 * `disabled`) so a dialog swallowing scans is visible.
+	 */
+	onAttempt?: (attempt: ScanAttempt) => void;
 	maxIntervalMs?: number;
 	minLength?: number;
 	// Idle time after which a burst is delivered even without a trailing Enter,
@@ -56,78 +32,51 @@ export type UseBarcodeScannerOptions = {
 export function useBarcodeScanner({
 	enabled,
 	onScan,
+	onAttempt,
 	maxIntervalMs = 100,
 	minLength = 5,
 	idleFlushMs = 50,
 }: UseBarcodeScannerOptions): void {
-	const bufferRef = useRef("");
-	const lastKeyTimeRef = useRef(0);
+	const callbacks = useRef({ onScan, onAttempt });
+	callbacks.current = { onScan, onAttempt };
+	const observing = onAttempt !== undefined;
 
 	useEffect(() => {
-		bufferRef.current = "";
-
-		if (!enabled) {
+		if (!enabled && !observing) {
 			return;
 		}
 
-		let idleTimer: ReturnType<typeof setTimeout> | undefined;
-
-		function cancelIdleFlush() {
-			clearTimeout(idleTimer);
-			idleTimer = undefined;
-		}
-
-		function scheduleIdleFlush() {
-			cancelIdleFlush();
-			idleTimer = setTimeout(() => {
-				const code = bufferRef.current;
-				bufferRef.current = "";
-				if (code.length >= minLength) {
-					onScan(code);
-				}
-			}, idleFlushMs);
-		}
+		const engine = createScanEngine(
+			{ maxIntervalMs, minLength, idleFlushMs },
+			{
+				onScan: (code, attempt) => callbacks.current.onScan(code, attempt),
+				onAttempt: (attempt) => callbacks.current.onAttempt?.(attempt),
+				observeOnly: !enabled,
+				schedule: (task, delayMs) => setTimeout(task, delayMs),
+				cancel: (handle) =>
+					clearTimeout(handle as ReturnType<typeof setTimeout>),
+			},
+		);
 
 		function handleKeyDown(e: KeyboardEvent) {
-			// Scanners in a non-US layout press and release Shift between digits.
-			if (MODIFIER_KEYS.has(e.key)) {
-				return;
-			}
-
-			const now = Date.now();
-			const elapsed = now - lastKeyTimeRef.current;
-			lastKeyTimeRef.current = now;
-
-			cancelIdleFlush();
-
-			if (e.key === "Enter") {
-				const code = bufferRef.current;
-				bufferRef.current = "";
-				if (code.length >= minLength && elapsed <= maxIntervalMs) {
-					e.preventDefault();
-					onScan(code);
-				}
-				return;
-			}
-
-			const digit = DIGIT_CODES[e.code];
-			if (!digit) {
-				bufferRef.current = "";
-				return;
-			}
-
-			bufferRef.current =
-				elapsed <= maxIntervalMs ? bufferRef.current + digit : digit;
-
-			if (bufferRef.current.length >= minLength) {
-				scheduleIdleFlush();
+			const { consumed } = engine.handleKey({
+				key: e.key,
+				code: e.code,
+				shiftKey: e.shiftKey,
+				ctrlKey: e.ctrlKey,
+				altKey: e.altKey,
+				metaKey: e.metaKey,
+				timestamp: Date.now(),
+			});
+			if (consumed) {
+				e.preventDefault();
 			}
 		}
 
 		window.addEventListener("keydown", handleKeyDown);
 		return () => {
-			cancelIdleFlush();
+			engine.dispose();
 			window.removeEventListener("keydown", handleKeyDown);
 		};
-	}, [enabled, onScan, maxIntervalMs, minLength, idleFlushMs]);
+	}, [enabled, observing, maxIntervalMs, minLength, idleFlushMs]);
 }

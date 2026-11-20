@@ -1,0 +1,133 @@
+{
+	"ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+	"platform": "Win32",
+	"content": "2304000025369",
+	"events": [
+		{
+			"key": "Shift",
+			"code": "ShiftLeft",
+			"mods": "shift",
+			"delta": 0,
+			"repeat": false
+		},
+		{
+			"key": "2",
+			"code": "Digit2",
+			"mods": "shift",
+			"delta": 0,
+			"repeat": false
+		},
+		{
+			"key": "3",
+			"code": "Digit3",
+			"mods": "shift",
+			"delta": 10,
+			"repeat": false
+		},
+		{
+			"key": "0",
+			"code": "Digit0",
+			"mods": "shift",
+			"delta": 3,
+			"repeat": false
+		},
+		{
+			"key": "4",
+			"code": "Digit4",
+			"mods": "shift",
+			"delta": 6,
+			"repeat": false
+		},
+		{
+			"key": "0",
+			"code": "Digit0",
+			"mods": "shift",
+			"delta": 5,
+			"repeat": false
+		},
+		{
+			"key": "Shift",
+			"code": "ShiftLeft",
+			"mods": "shift",
+			"delta": 7,
+			"repeat": false
+		},
+		{
+			"key": "0",
+			"code": "Digit0",
+			"mods": "shift",
+			"delta": 0,
+			"repeat": false
+		},
+		{
+			"key": "Shift",
+			"code": "ShiftLeft",
+			"mods": "shift",
+			"delta": 6,
+			"repeat": false
+		},
+		{
+			"key": "0",
+			"code": "Digit0",
+			"mods": "shift",
+			"delta": 0,
+			"repeat": false
+		},
+		{
+			"key": "Shift",
+			"code": "ShiftLeft",
+			"mods": "shift",
+			"delta": 3,
+			"repeat": false
+		},
+		{
+			"key": "0",
+			"code": "Digit0",
+			"mods": "shift",
+			"delta": 0,
+			"repeat": false
+		},
+		{
+			"key": "2",
+			"code": "Digit2",
+			"mods": "shift",
+			"delta": 3,
+			"repeat": false
+		},
+		{
+			"key": "5",
+			"code": "Digit5",
+			"mods": "shift",
+			"delta": 3,
+			"repeat": false
+		},
+		{
+			"key": "3",
+			"code": "Digit3",
+			"mods": "shift",
+			"delta": 4,
+			"repeat": false
+		},
+		{
+			"key": "6",
+			"code": "Digit6",
+			"mods": "shift",
+			"delta": 4,
+			"repeat": false
+		},
+		{
+			"key": "9",
+			"code": "Digit9",
+			"mods": "shift",
+			"delta": 3,
+			"repeat": false
+		},
+		{
+			"key": "Enter",
+			"code": "Enter",
+			"mods": "-",
+			"delta": 3,
+			"repeat": false
+		}
+	]
+}

@@ -2,6 +2,7 @@ import type { QuaggaJSResultObject } from "@ericblade/quagga2";
 import { act, render } from "@testing-library/react";
 import { StrictMode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { CameraSessionSummary } from "../src/camera/camera-session";
 import {
 	type UseBarcodeCameraOptions,
 	useBarcodeCamera,
@@ -392,5 +393,116 @@ describe("useBarcodeCamera", () => {
 		expect(mockQuagga.stop).toHaveBeenCalledTimes(1);
 		expect(mockQuagga.offDetected).toHaveBeenCalledTimes(1);
 		expect(mockQuagga.offProcessed).toHaveBeenCalledTimes(1);
+	});
+});
+
+describe("useBarcodeCamera onSession", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		vi.useFakeTimers();
+		vi.setSystemTime(0);
+	});
+
+	afterEach(() => {
+		vi.useRealTimers();
+	});
+
+	function renderCamera(onSession: (summary: CameraSessionSummary) => void) {
+		const resultRef = { current: null } as { current: HookResult | null };
+		const view = render(
+			<TestHarness
+				enabled={true}
+				onScan={vi.fn()}
+				onSession={onSession}
+				resultRef={resultRef}
+			/>,
+		);
+		const rerenderWith = (enabled: boolean) =>
+			view.rerender(
+				<TestHarness
+					enabled={enabled}
+					onScan={vi.fn()}
+					onSession={onSession}
+					resultRef={resultRef}
+				/>,
+			);
+		return { ...view, rerenderWith };
+	}
+
+	it("reports one summary when the camera is switched off", () => {
+		const onSession = vi.fn();
+		const { rerenderWith } = renderCamera(onSession);
+		act(() => vi.advanceTimersByTime(600));
+		succeedInit();
+		act(() => vi.advanceTimersByTime(400));
+		fireDetected("3760123456784");
+		act(() => vi.advanceTimersByTime(1000));
+
+		rerenderWith(false);
+
+		expect(onSession).toHaveBeenCalledTimes(1);
+		expect(onSession).toHaveBeenCalledWith({
+			finalStatus: "running",
+			startupMs: 600,
+			firstScanMs: 400,
+			scans: 1,
+			durationMs: 2000,
+		});
+	});
+
+	it("reports the failure when the camera never started", () => {
+		const onSession = vi.fn();
+		const { unmount } = renderCamera(onSession);
+		failInit({ name: "NotAllowedError" });
+
+		unmount();
+
+		expect(onSession).toHaveBeenCalledWith(
+			expect.objectContaining({
+				finalStatus: "permission-denied",
+				startupMs: null,
+			}),
+		);
+	});
+
+	it("counts only the scans the hook accepted", () => {
+		const onSession = vi.fn();
+		const { rerenderWith } = renderCamera(onSession);
+		succeedInit();
+		fireDetected("3760123456784", 100);
+		fireDetected("3760123456784", 150);
+
+		rerenderWith(false);
+
+		expect(onSession.mock.calls[0][0].scans).toBe(1);
+	});
+
+	it("starts a fresh session each time the camera is switched on", () => {
+		const onSession = vi.fn();
+		const { rerenderWith } = renderCamera(onSession);
+		succeedInit();
+		fireDetected("3760123456784");
+		rerenderWith(false);
+
+		rerenderWith(true);
+		rerenderWith(false);
+
+		expect(onSession).toHaveBeenCalledTimes(2);
+		expect(onSession.mock.calls[1][0].scans).toBe(0);
+	});
+
+	it("reports nothing while the camera stays off", () => {
+		const onSession = vi.fn();
+		const resultRef = { current: null } as { current: HookResult | null };
+		render(
+			<TestHarness
+				enabled={false}
+				onScan={vi.fn()}
+				onSession={onSession}
+				resultRef={resultRef}
+			/>,
+		);
+
+		expect(onSession).not.toHaveBeenCalled();
 	});
 });

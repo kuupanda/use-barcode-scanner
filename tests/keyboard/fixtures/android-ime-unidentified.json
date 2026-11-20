@@ -1,0 +1,98 @@
+{
+	"ua": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) SamsungBrowser/30.0 Chrome/143.0.0.0 Safari/537.36",
+	"platform": "Linux armv81",
+	"content": "203101028861",
+	"events": [
+		{
+			"key": "Unidentified",
+			"code": "",
+			"mods": "-",
+			"delta": 0,
+			"repeat": false
+		},
+		{
+			"key": "Unidentified",
+			"code": "",
+			"mods": "-",
+			"delta": 15,
+			"repeat": false
+		},
+		{
+			"key": "Unidentified",
+			"code": "",
+			"mods": "-",
+			"delta": 11,
+			"repeat": false
+		},
+		{
+			"key": "Unidentified",
+			"code": "",
+			"mods": "-",
+			"delta": 6,
+			"repeat": false
+		},
+		{
+			"key": "Unidentified",
+			"code": "",
+			"mods": "-",
+			"delta": 3,
+			"repeat": false
+		},
+		{
+			"key": "Unidentified",
+			"code": "",
+			"mods": "-",
+			"delta": 6,
+			"repeat": false
+		},
+		{
+			"key": "Unidentified",
+			"code": "",
+			"mods": "-",
+			"delta": 34,
+			"repeat": false
+		},
+		{
+			"key": "Unidentified",
+			"code": "",
+			"mods": "-",
+			"delta": 13,
+			"repeat": false
+		},
+		{
+			"key": "Unidentified",
+			"code": "",
+			"mods": "-",
+			"delta": 23,
+			"repeat": false
+		},
+		{
+			"key": "Unidentified",
+			"code": "",
+			"mods": "-",
+			"delta": 29,
+			"repeat": false
+		},
+		{
+			"key": "Unidentified",
+			"code": "",
+			"mods": "-",
+			"delta": 42,
+			"repeat": false
+		},
+		{
+			"key": "Unidentified",
+			"code": "",
+			"mods": "-",
+			"delta": 15,
+			"repeat": false
+		},
+		{
+			"key": "Enter",
+			"code": "Enter",
+			"mods": "-",
+			"delta": 62,
+			"repeat": false
+		}
+	]
+}

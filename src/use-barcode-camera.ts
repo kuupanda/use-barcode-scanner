@@ -7,6 +7,11 @@ import Quagga, {
 } from "@ericblade/quagga2";
 import { type RefObject, useEffect, useRef, useState } from "react";
 import {
+	type CameraSession,
+	type CameraSessionSummary,
+	createCameraSession,
+} from "./camera/camera-session";
+import {
 	createScanSession,
 	registerDetection,
 	registerMiss,
@@ -56,6 +61,9 @@ export type UseBarcodeCameraOptions = {
 	// Replaces DEFAULT_READERS entirely (not merged) — include "ean_reader"
 	// yourself if you still want it alongside another format.
 	readers?: (QuaggaJSReaderConfig | QuaggaJSCodeReader)[];
+	// Called once each time the camera is switched off (or the component
+	// unmounts) with how that session went: startup time, scans, final status.
+	onSession?: (summary: CameraSessionSummary) => void;
 } & Partial<ScanSessionConfig>;
 
 export type UseBarcodeCameraResult = {
@@ -92,6 +100,7 @@ export function useBarcodeCamera({
 	onScan,
 	scanArea,
 	readers = DEFAULT_READERS,
+	onSession,
 	dedupeWindowMs,
 	missingGraceMs,
 	codeChangeConfirmMs,
@@ -100,6 +109,23 @@ export function useBarcodeCamera({
 	const [status, setStatus] = useState<BarcodeCameraStatus>("idle");
 	const onScanRef = useRef(onScan);
 	onScanRef.current = onScan;
+	const onSessionRef = useRef(onSession);
+	onSessionRef.current = onSession;
+	const cameraSessionRef = useRef<CameraSession | null>(null);
+
+	useEffect(() => {
+		if (!enabled) return;
+		const cameraSession = createCameraSession(() => performance.now());
+		cameraSessionRef.current = cameraSession;
+		return () => {
+			cameraSessionRef.current = null;
+			onSessionRef.current?.(cameraSession.end());
+		};
+	}, [enabled]);
+
+	useEffect(() => {
+		if (enabled) cameraSessionRef.current?.statusChanged(status);
+	}, [enabled, status]);
 
 	const effectiveArea: ScanArea = { ...DEFAULT_SCAN_AREA, ...scanArea };
 	const { left, right, top, bottom } = effectiveArea;
@@ -133,7 +159,10 @@ export function useBarcodeCamera({
 			if (!code) return;
 			const result = registerDetection(session, code, Date.now());
 			session = result.session;
-			if (result.accept) onScanRef.current(code);
+			if (result.accept) {
+				cameraSessionRef.current?.scanned();
+				onScanRef.current(code);
+			}
 		}
 
 		function handleProcessed(data: QuaggaJSResultObject) {

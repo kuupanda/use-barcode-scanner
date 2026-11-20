@@ -64,7 +64,10 @@ describe("useBarcodeScanner", () => {
 		pressDigit("5", 40);
 		pressEnter(50);
 
-		expect(onScan).toHaveBeenCalledWith("12345");
+		expect(onScan).toHaveBeenCalledWith(
+			"12345",
+			expect.objectContaining({ delivered: true }),
+		);
 		expect(onScan).toHaveBeenCalledTimes(1);
 	});
 
@@ -83,7 +86,10 @@ describe("useBarcodeScanner", () => {
 		pressDigit("§", 40, "Digit6");
 		pressEnter(50);
 
-		expect(onScan).toHaveBeenCalledWith("23456");
+		expect(onScan).toHaveBeenCalledWith(
+			"23456",
+			expect.objectContaining({ delivered: true }),
+		);
 	});
 
 	it("should not call onScan for slow, human-paced digit entry", () => {

@@ -62,6 +62,7 @@ export function useBarcodeScanner({
 }: UseBarcodeScannerOptions): void {
 	const bufferRef = useRef("");
 	const lastKeyTimeRef = useRef(0);
+	const textChannelRef = useRef(false);
 
 	useEffect(() => {
 		bufferRef.current = "";
@@ -110,6 +111,17 @@ export function useBarcodeScanner({
 				return;
 			}
 
+			// Some Android IMEs report every key as "Unidentified" with no code; the
+			// digits then arrive only through input events (see handleInput).
+			if (e.key === "Unidentified") {
+				textChannelRef.current = true;
+				if (elapsed > maxIntervalMs) {
+					bufferRef.current = "";
+				}
+				return;
+			}
+
+			textChannelRef.current = false;
 			const digit = DIGIT_CODES[e.code];
 			if (!digit) {
 				bufferRef.current = "";
@@ -124,10 +136,25 @@ export function useBarcodeScanner({
 			}
 		}
 
+		// Only used while keydowns are Unidentified, so a normal keyboard-wedge
+		// scanner (digits already read from event.code) is never counted twice.
+		function handleInput(e: Event) {
+			const data = (e as InputEvent).data;
+			if (!textChannelRef.current || !data || !/^\d+$/.test(data)) {
+				return;
+			}
+			bufferRef.current += data;
+			if (bufferRef.current.length >= minLength) {
+				scheduleIdleFlush();
+			}
+		}
+
 		window.addEventListener("keydown", handleKeyDown);
+		window.addEventListener("input", handleInput);
 		return () => {
 			cancelIdleFlush();
 			window.removeEventListener("keydown", handleKeyDown);
+			window.removeEventListener("input", handleInput);
 		};
 	}, [enabled, onScan, maxIntervalMs, minLength, idleFlushMs]);
 }
